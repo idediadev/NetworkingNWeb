@@ -14,31 +14,62 @@
 #include <crypt.h>;
 #include <fcntl.h>;
 
-#define DIM_BUFF 256
+#define PORT 8080;
+#define BUFFER_SIZE 1024
 
-int main (int argc, char *argv[])
+int main ()
 {
-    int count, fd_sorg, fd_dest, nread, sd, port;
-    char filename;
-    char buff[DIM_BUFF],
-    // ser the max lenght of the filename
-    char  name_sorg[FILENAME_MAX + 1], nome_dest[FILENAME_MAX + 1];
+    int sock = 0;                                                           // file descriptor for the client's socket
+    struct sockaddr_in serv_addr;                                           // struct for the Server's address
+    char buffer[BUFFER_SIZE];                                               // buffer setting Stream
+    char filename[BUFFER_SIZE];                                             // buffer stream for fileName  
 
-    struct hostnet *host;
-    struct sockaddr_in servaddr; 
+    // Socket client side
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0))<0)
+    {
+        printf("\nError : Socket creation");
+        return -1;
+    }
+    
+    serv_addr.sin_family= AF_INET;
+    serv_addr.sin_addr= htons(PORT);
 
-    //chack args
-    if (argc!=1) {printf("Error: %s serverAddress serverPort\n",argv[0]); exit(1);}
-    //setting cliant comunicate to server
-    memset((char *)&servaddr, 0, sizeof(struct sockaddr_in));
-    servaddr.sin_family = AF_INET;
-    host = gethostbyname(argv[1]);
-    //check filename 
+    // IP to bin
+    if (inet_pton(AF_INET,"198.154.32.32", &serv_addr.sin_addr)<=0)     //FAKE IP
+    {
+        printf("\nError : Invalid address IP");
+        return -1;
+    }
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0)
+    {
+        printf("\nError: Connection failed");
+        return -1;
+    }
 
+    while(1)
+    {
+        
+        printf("Which file are you want to scan ? (type 'exit' to quit): "); // ask the file name to scan; Terminal interface 
+        scanf("%s", filename);
 
-    // client itself 
-    printf("Witch remote file are you want to scan ?\n");
+        if (strcmp(filename, "exit") == 0 ) break;                           // user write exit, so end it 
+
+        send(sock, filename, strlen(filename), 0);
+
+        
+        int valread = read(sock, buffer, BUFFER_SIZE);                      // recive the Longest Word 
+        if (valread > 0)
+        {
+            buffer[valread] = '\0';
+            printf("The Longest word lenght : %s \n", buffer);
+        }
+    }
+    close(sock);
+    return 0;
+}
+
+   
     
 
 
-}
+
